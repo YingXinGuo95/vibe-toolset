@@ -1,0 +1,127 @@
+{
+  "Layout": {
+    "title": {
+      "default": "VibeApp - 交互式 Vibe Coding 工具集合",
+      "template": "%s | VibeApp"
+    },
+    "description": "VibeApp 提供精选的交互式工具与演示，面向 vibe coding 爱好者，涵盖策略游戏、可视化工具、计算器等多个领域。",
+    "keywords": ["vibe coding", "交互工具", "演示", "Web 应用", "HTML5"],
+    "openGraph": {
+      "title": "VibeApp - 交互式 Vibe Coding 工具集合",
+      "description": "面向 vibe coding 爱好者的精选交互式工具与演示集合。"
+    }
+  },
+  "Header": {
+    "brand": "VibeApp",
+    "navHome": "首页",
+    "navDemos": "工具列表",
+    "navTodoList": "备忘录"
+  },
+  "Footer": {
+    "description": "面向 vibe coding 爱好者的精选交互式工具集合。",
+    "headingLinks": "链接",
+    "headingAbout": "关于",
+    "aboutText": "VibeApp 是一个开源的交互式工具与演示集合，旨在为 vibe coding 爱好者提供轻量、有趣的 Web 体验。",
+    "disclaimer": "免责声明：本网站上的所有工具仅供学习与娱乐使用。内容仅供参考，不构成专业建议。",
+    "copyright": "© {year} VibeApp. All rights reserved.",
+    "navHome": "首页",
+    "navDemos": "工具列表"
+  },
+  "HomePage": {
+    "heroTitle": "交互式 Vibe Coding 工具集合",
+    "heroDescription": "轻量级、自包含的 HTML5 交互式工具，将想法转化为有趣的动手体验。",
+    "allDemos": "所有工具"
+  },
+  "Demos": {},
+  "TodoList": {
+    "title": "备忘录",
+    "breadcrumbHome": "首页",
+    "placeholder": "今天有什么要做的？",
+    "add": "添加",
+    "today": "今天",
+    "pickDate": "选择日期",
+    "createToday": "今天",
+    "createCustom": "自定义日期",
+    "month": "月",
+    "day": "日",
+    "genWeeklyReport": "生成周报",
+    "genMonthlyReport": "生成月报",
+    "reportTitle": "报告生成",
+    "weeklyReportTitle": "生成周报",
+    "weeklyReportDesc": "本周事项一览：",
+    "generate": "生成",
+    "generatingReport": "正在生成周报...",
+    "reportError": "生成失败",
+    "backToSelect": "返回选择",
+    "copyReport": "复制周报",
+    "regenerate": "重新生成",
+    "lengthLabel": "篇幅：",
+    "length": {
+      "detailed": "详细",
+      "concise": "简洁",
+      "minimal": "极简"
+    },
+    "formatLabel": "格式：",
+    "format": {
+      "text": "文字编排",
+      "markdown": "Markdown"
+    },
+    "cancel": "取消",
+    "thisWeek": "本周",
+    "lastWeek": "上周",
+    "futureGroup": "未来日期事项",
+    "empty": "暂无备忘事项，开始记录吧！",
+    "deleted": "已删除一条记录",
+    "undo": "撤销",
+    "statusTodo": "待完成",
+    "statusDone": "已完成",
+    "statusAbandoned": "已废弃",
+    "markDone": "标记完成",
+    "markTodo": "恢复待完成",
+    "abandon": "废弃",
+    "restore": "恢复",
+    "delete": "删除",
+    "edit": "编辑",
+    "completedAt": "完成于 {time}",
+    "statsTotal": "共 {count} 条",
+    "statsDone": "已完成 {count} 条",
+    "statsRate": "完成率 {rate}%",
+    "filter": {
+      "all": "全部",
+      "today": "今天",
+      "week": "本周",
+      "7days": "最近7天",
+      "30days": "最近30天",
+      "month": "本月",
+      "custom": "自定义",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "apply": "应用",
+      "customRange": "{start} ~ {end}"
+    }
+  },
+  "Auth": {
+    "login": "登录",
+    "register": "注册",
+    "logout": "注销",
+    "email": "邮箱",
+    "password": "密码",
+    "username": "用户名",
+    "confirmPassword": "确认密码",
+    "loginTitle": "欢迎回来",
+    "loginDescription": "输入您的凭据以访问您的账户",
+    "registerTitle": "创建账户",
+    "registerDescription": "注册新账户以开始使用",
+    "loginButton": "登录",
+    "registerButton": "注册",
+    "loggingIn": "登录中...",
+    "registering": "注册中...",
+    "noAccount": "还没有账户？",
+    "hasAccount": "已有账户？",
+    "errorInvalidCredentials": "邮箱或密码无效",
+    "errorEmailRequired": "请输入邮箱",
+    "errorPasswordRequired": "请输入密码",
+    "errorPasswordsDontMatch": "两次密码不一致",
+    "errorUsernameRequired": "请输入用户名"
+  }
+}

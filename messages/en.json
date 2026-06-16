@@ -1,0 +1,127 @@
+{
+  "Layout": {
+    "title": {
+      "default": "VibeApp - Interactive Vibe Coding Tool Collection",
+      "template": "%s | VibeApp"
+    },
+    "description": "VibeApp provides a curated collection of interactive tools and demos for vibe coding enthusiasts, covering strategy games, visual utilities, calculators and more.",
+    "keywords": ["vibe coding", "interactive tools", "demos", "web apps", "HTML5"],
+    "openGraph": {
+      "title": "VibeApp - Interactive Vibe Coding Tool Collection",
+      "description": "A curated collection of interactive tools and demos for vibe coding."
+    }
+  },
+  "Header": {
+    "brand": "VibeApp",
+    "navHome": "Home",
+    "navDemos": "Tools",
+    "navTodoList": "Memo"
+  },
+  "Footer": {
+    "description": "A curated collection of interactive tools for vibe coding enthusiasts.",
+    "headingLinks": "Links",
+    "headingAbout": "About",
+    "aboutText": "VibeApp is an open-source collection of interactive tools and demos, designed to provide lightweight, engaging web experiences for vibe coding enthusiasts.",
+    "disclaimer": "Disclaimer: All tools on this website are for educational and entertainment purposes only. Content is for reference and does not constitute professional advice.",
+    "copyright": "© {year} VibeApp. All rights reserved.",
+    "navHome": "Home",
+    "navDemos": "Tools"
+  },
+  "HomePage": {
+    "heroTitle": "Interactive Vibe Coding Tool Collection",
+    "heroDescription": "Lightweight, self-contained HTML5 interactive tools that turn ideas into engaging hands-on experiences.",
+    "allDemos": "All Tools"
+  },
+  "Demos": {},
+  "TodoList": {
+    "title": "Memo Pad",
+    "breadcrumbHome": "Home",
+    "placeholder": "What do you need to do today?",
+    "add": "Add",
+    "today": "Today",
+    "pickDate": "Pick date",
+    "createToday": "Today",
+    "createCustom": "Custom date",
+    "month": "Mo",
+    "day": "Day",
+    "genWeeklyReport": "Weekly Report",
+    "genMonthlyReport": "Monthly Report",
+    "reportTitle": "Report",
+    "weeklyReportTitle": "Weekly Report",
+    "weeklyReportDesc": "This week's items:",
+    "generate": "Generate",
+    "generatingReport": "Generating report...",
+    "reportError": "Generation failed",
+    "backToSelect": "Back to select",
+    "copyReport": "Copy report",
+    "regenerate": "Regenerate",
+    "lengthLabel": "Length: ",
+    "length": {
+      "detailed": "Detailed",
+      "concise": "Concise",
+      "minimal": "Minimal"
+    },
+    "formatLabel": "Format: ",
+    "format": {
+      "text": "Plain text",
+      "markdown": "Markdown"
+    },
+    "cancel": "Cancel",
+    "thisWeek": "This Week",
+    "lastWeek": "Last Week",
+    "futureGroup": "Upcoming",
+    "empty": "No memos yet. Start recording!",
+    "deleted": "Item deleted",
+    "undo": "Undo",
+    "statusTodo": "Todo",
+    "statusDone": "Done",
+    "statusAbandoned": "Abandoned",
+    "markDone": "Mark as done",
+    "markTodo": "Revert to todo",
+    "abandon": "Abandon",
+    "restore": "Restore",
+    "delete": "Delete",
+    "edit": "Edit",
+    "completedAt": "Done at {time}",
+    "statsTotal": "Total: {count}",
+    "statsDone": "Done: {count}",
+    "statsRate": "Completion: {rate}%",
+    "filter": {
+      "all": "All",
+      "today": "Today",
+      "week": "This week",
+      "7days": "Last 7 days",
+      "30days": "Last 30 days",
+      "month": "This month",
+      "custom": "Custom",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "apply": "Apply",
+      "customRange": "{start} ~ {end}"
+    }
+  },
+  "Auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "confirmPassword": "Confirm Password",
+    "loginTitle": "Welcome Back",
+    "loginDescription": "Enter your credentials to access your account",
+    "registerTitle": "Create Account",
+    "registerDescription": "Sign up for a new account to get started",
+    "loginButton": "Login",
+    "registerButton": "Register",
+    "loggingIn": "Logging in...",
+    "registering": "Registering...",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "errorInvalidCredentials": "Invalid email or password",
+    "errorEmailRequired": "Email is required",
+    "errorPasswordRequired": "Password is required",
+    "errorPasswordsDontMatch": "Passwords do not match",
+    "errorUsernameRequired": "Username is required"
+  }
+}
