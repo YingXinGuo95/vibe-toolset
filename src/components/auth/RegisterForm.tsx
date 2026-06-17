@@ -16,6 +16,11 @@ import {
 } from "@/components/ui/card";
 import { Mail, Lock, User, UserPlus, AlertCircle } from "lucide-react";
 
+/** Simple email format check. */
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export function RegisterForm() {
   const t = useTranslations("Auth");
   const { register } = useAuth();
@@ -38,6 +43,10 @@ export function RegisterForm() {
     }
     if (!email.trim()) {
       setError(t("errorEmailRequired"));
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError(t("errorInvalidEmail"));
       return;
     }
     if (!password) {

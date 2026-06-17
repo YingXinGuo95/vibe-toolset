@@ -37,12 +37,36 @@ export default async function HomePage({ params }: Props) {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <Link href="/todoList">
             <Card className="group h-full overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 cursor-pointer">
-              <div className="aspect-video w-full bg-muted flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="400" height="225" viewBox="0 0 400 225">
-                  <rect width="400" height="225" fill="#2563EB" rx="8"/>
-                  <text x="200" y="105" textAnchor="middle" fill="white" fontSize="20" fontFamily="sans-serif" fontWeight="bold">{tTodo("title")}</text>
-                  <text x="200" y="135" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="13" fontFamily="sans-serif">Memo</text>
-                </svg>
+              <div className="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700">
+                {/* decorative circles */}
+                <div className="absolute -right-8 -top-8 size-32 rounded-full bg-white/10" />
+                <div className="absolute -bottom-12 -left-6 size-36 rounded-full bg-white/5" />
+                {/* notepad icon */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="72"
+                    height="72"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
+                  >
+                    <path d="M9 2h6a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
+                    <path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2" />
+                    <path d="M9 12h6" />
+                    <path d="M9 16h6" />
+                    <path d="M9 8h4" />
+                  </svg>
+                </div>
+                {/* title overlay */}
+                <div className="absolute bottom-3 left-4">
+                  <p className="text-lg font-bold text-white drop-shadow">{tTodo("title")}</p>
+                  <p className="text-xs text-white/70">Memo</p>
+                </div>
               </div>
               <CardHeader className="p-4 pb-2">
                 <div className="flex items-start justify-between gap-2">

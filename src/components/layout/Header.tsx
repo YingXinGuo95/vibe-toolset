@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { LocaleSwitcher } from "./LocaleSwitcher";
+import { AuthHeaderSlot } from "@/components/auth/AuthHeaderSlot";
 
 export function Header() {
   const t = useTranslations("Header");
@@ -21,6 +22,7 @@ export function Header() {
             {t("navHome")}
           </Link>
           <LocaleSwitcher />
+          <AuthHeaderSlot />
         </nav>
       </div>
     </header>

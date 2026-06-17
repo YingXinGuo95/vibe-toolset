@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/lib/auth/auth-context";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -16,19 +16,11 @@ export function UserMenu() {
 
   if (!user) return null;
 
-  const initials = user.username
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Avatar className="size-8">
-          <AvatarFallback>{initials}</AvatarFallback>
-        </Avatar>
+      <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+        <User className="size-5 text-muted-foreground" />
+        <span className="hidden sm:inline">{user.username}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
         <div className="px-2 py-1.5 text-xs text-muted-foreground">

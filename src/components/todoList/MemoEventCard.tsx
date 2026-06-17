@@ -25,6 +25,7 @@ export interface MemoEvent {
   createdAt: number;
   completedAt?: number;
   updatedAt: number;
+  deletedAt?: number;
 }
 
 export interface EventCardProps {

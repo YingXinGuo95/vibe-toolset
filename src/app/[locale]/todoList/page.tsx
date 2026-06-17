@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/routing";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +25,9 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { WeeklyReportDialog } from "@/components/todoList/WeeklyReportDialog";
+import { MergeAnonymousDialog } from "@/components/todoList/MergeAnonymousDialog";
+import { useAuth } from "@/lib/auth/auth-context";
+import { mergeEvents, pushToCloud, pullFromCloud } from "@/lib/todo/sync";
 import {
   Plus,
   Undo2,
@@ -31,6 +35,11 @@ import {
   Calendar,
   FileText,
   Forward,
+  Cloud,
+  CloudOff,
+  CloudUpload,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import {
   MemoEventCard,
@@ -45,27 +54,38 @@ import {
 type DateFilter = "all" | "today" | "week" | "7days" | "30days" | "month" | "custom";
 
 /* ------------------------------------------------------------------ */
-/*  localStorage helpers                                               */
+/*  localStorage helpers (user-scoped)                                 */
 /* ------------------------------------------------------------------ */
 
-const STORAGE_KEY = "vibe-memo-events";
+function getStorageKey(userId: string | null): string {
+  return userId ? `vibe-memo-events:${userId}` : "vibe-memo-events:anonymous";
+}
 
-function loadEvents(): MemoEvent[] {
+function loadEvents(userId: string | null): MemoEvent[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(getStorageKey(userId));
     return raw ? (JSON.parse(raw) as MemoEvent[]) : [];
   } catch {
     return [];
   }
 }
 
-function saveEvents(events: MemoEvent[]) {
+function saveEvents(userId: string | null, events: MemoEvent[]) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    localStorage.setItem(getStorageKey(userId), JSON.stringify(events));
   } catch {
     // quota exceeded — silently ignore
+  }
+}
+
+function clearAnonymousEvents() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(getStorageKey(null));
+  } catch {
+    // ignore
   }
 }
 
@@ -164,11 +184,22 @@ function toInputDate(ts: number): string {
 export default function TodoListPage() {
   const t = useTranslations("TodoList");
   const locale = useLocale();
+  const { user } = useAuth();
 
   /* ---- state ---- */
   const [events, setEvents] = useState<MemoEvent[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [syncStatus, setSyncStatus] = useState<
+    "idle" | "syncing" | "success" | "error"
+  >("idle");
+  const [syncMessage, setSyncMessage] = useState("");
+  const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
+  const [pendingAnonymousEvents, setPendingAnonymousEvents] = useState<
+    MemoEvent[]
+  >([]);
+  const previousUserRef = useRef<string | null | undefined>(undefined);
+  const loadedStorageKeyRef = useRef<string>(getStorageKey(null));
   /* date selector for new memo — "today" or "custom" */
   type CreateDateMode = "today" | "custom";
   const [createDateMode, setCreateDateMode] = useState<CreateDateMode>("today");
@@ -186,16 +217,122 @@ export default function TodoListPage() {
   const [undoItem, setUndoItem] = useState<MemoEvent | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const applyCloudWins = useCallback((cloudWins: MemoEvent[]) => {
+    if (cloudWins.length === 0) return;
+    setEvents((prev) => {
+      const map = new Map(prev.map((e) => [e.id, e]));
+      for (const cloud of cloudWins) {
+        const local = map.get(cloud.id);
+        if (!local || cloud.updatedAt > local.updatedAt) {
+          map.set(cloud.id, cloud);
+        }
+      }
+      return Array.from(map.values());
+    });
+    setSyncStatus("success");
+    setSyncMessage(
+      cloudWins.length === 1
+        ? t("cloudWinSingle")
+        : t("cloudWinMultiple", { count: cloudWins.length })
+    );
+  }, [t]);
+
   /* ---- hydration ---- */
   useEffect(() => {
-    setEvents(loadEvents());
+    // Start with anonymous data; user-scoped data is loaded when user is known.
+    loadedStorageKeyRef.current = getStorageKey(null);
+    setEvents(loadEvents(null));
     setHydrated(true);
   }, []);
 
   /* ---- persist ---- */
   useEffect(() => {
-    if (hydrated) saveEvents(events);
-  }, [events, hydrated]);
+    if (!hydrated) return;
+    // Only persist to the storage key we have explicitly loaded, so that
+    // anonymous data is not accidentally written to a user's scoped key
+    // before their own data has been loaded.
+    const targetKey = getStorageKey(user?.id ?? null);
+    if (loadedStorageKeyRef.current === targetKey) {
+      saveEvents(user?.id ?? null, events);
+    }
+  }, [events, hydrated, user?.id]);
+
+  /* ---- login / logout switching ---- */
+  useEffect(() => {
+    if (!hydrated) return;
+
+    const currentUserId = user?.id ?? null;
+    const previousUserId = previousUserRef.current;
+    previousUserRef.current = currentUserId;
+
+    // Login: null / undefined -> authenticated user
+    if (currentUserId && previousUserId !== currentUserId) {
+      const userLocal = loadEvents(currentUserId);
+      const anonymous = loadEvents(null);
+
+      setSyncStatus("syncing");
+      pullFromCloud().then((pullResult) => {
+        const cloudEvents = pullResult.ok ? pullResult.events : [];
+        const { merged: userMerged } = mergeEvents(userLocal, cloudEvents);
+
+        if (anonymous.length > 0) {
+          // Ask whether to merge anonymous data into the current account.
+          loadedStorageKeyRef.current = getStorageKey(currentUserId);
+          setPendingAnonymousEvents(anonymous);
+          setEvents(userMerged);
+          setMergeDialogOpen(true);
+          setSyncStatus("idle");
+        } else {
+          loadedStorageKeyRef.current = getStorageKey(currentUserId);
+          const { merged, cloudWins } = mergeEvents(userMerged, []);
+          setEvents(merged);
+          applyCloudWins(cloudWins);
+          pushToCloud(merged).then((pushResult) => {
+            if (pushResult.ok) {
+              applyCloudWins(pushResult.cloudWins);
+              setSyncStatus("success");
+              setSyncMessage(t("syncSuccess"));
+            } else {
+              setSyncStatus("error");
+              setSyncMessage(pushResult.error);
+            }
+          });
+        }
+      });
+      return;
+    }
+
+    // Logout: authenticated user -> anonymous
+    if (!currentUserId && previousUserId) {
+      loadedStorageKeyRef.current = getStorageKey(null);
+      setEvents(loadEvents(null));
+      setSyncStatus("idle");
+      setSyncMessage("");
+    }
+  }, [user?.id, hydrated, t]);
+
+  /* ---- auto sync to cloud ---- */
+  useEffect(() => {
+    if (!hydrated || !user?.id) return;
+
+    const timer = setTimeout(() => {
+      setSyncStatus("syncing");
+      pushToCloud(events).then((result) => {
+        if (result.ok) {
+          applyCloudWins(result.cloudWins);
+          if (result.cloudWins.length === 0) {
+            setSyncStatus("success");
+            setSyncMessage(t("syncSuccess"));
+          }
+        } else {
+          setSyncStatus("error");
+          setSyncMessage(result.error);
+        }
+      });
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [events, hydrated, user?.id, applyCloudWins, t]);
 
   /* ---- auto-expand today ---- */
   useEffect(() => {
@@ -260,7 +397,14 @@ export default function TodoListPage() {
   }, []);
 
   const handleDelete = useCallback((ev: MemoEvent) => {
-    setEvents((prev) => prev.filter((e) => e.id !== ev.id));
+    const deletedAt = Date.now();
+    setEvents((prev) =>
+      prev.map((e) =>
+        e.id === ev.id
+          ? { ...e, deletedAt, updatedAt: deletedAt }
+          : e
+      )
+    );
     setUndoItem(ev);
     if (undoTimer.current) clearTimeout(undoTimer.current);
     undoTimer.current = setTimeout(() => setUndoItem(null), 5000);
@@ -268,10 +412,92 @@ export default function TodoListPage() {
 
   const handleUndo = useCallback(() => {
     if (!undoItem) return;
-    setEvents((prev) => [undoItem, ...prev]);
+    setEvents((prev) =>
+      prev.map((e) =>
+        e.id === undoItem.id ? { ...e, deletedAt: undefined } : e
+      )
+    );
     setUndoItem(null);
     if (undoTimer.current) clearTimeout(undoTimer.current);
   }, [undoItem]);
+
+  const handleManualSync = useCallback(async () => {
+    if (!user?.id) return;
+    setSyncStatus("syncing");
+    setSyncMessage("");
+
+    const pullResult = await pullFromCloud();
+    if (!pullResult.ok) {
+      setSyncStatus("error");
+      setSyncMessage(pullResult.error);
+      return;
+    }
+
+    const { merged, cloudWins } = mergeEvents(events, pullResult.events);
+    setEvents(merged);
+    applyCloudWins(cloudWins);
+
+    const pushResult = await pushToCloud(merged);
+    if (pushResult.ok) {
+      applyCloudWins(pushResult.cloudWins);
+      if (pushResult.cloudWins.length === 0 && cloudWins.length === 0) {
+        setSyncStatus("success");
+        setSyncMessage(t("syncSuccess"));
+      }
+    } else {
+      setSyncStatus("error");
+      setSyncMessage(pushResult.error);
+    }
+  }, [events, user?.id, applyCloudWins, t]);
+
+  const handleMergeConfirm = useCallback(() => {
+    if (!user?.id) return;
+    // Merge anonymous data into the current in-memory list (already loaded
+    // from the user's local/cloud state). Timestamp-based resolution handles
+    // any conflicts automatically.
+    const { merged, cloudWins } = mergeEvents(events, pendingAnonymousEvents);
+
+    setEvents(merged);
+    applyCloudWins(cloudWins);
+    clearAnonymousEvents();
+    setPendingAnonymousEvents([]);
+    setMergeDialogOpen(false);
+
+    setSyncStatus("syncing");
+    pushToCloud(merged).then((result) => {
+      if (result.ok) {
+        applyCloudWins(result.cloudWins);
+        if (result.cloudWins.length === 0 && cloudWins.length === 0) {
+          setSyncStatus("success");
+          setSyncMessage(t("syncSuccess"));
+        }
+      } else {
+        setSyncStatus("error");
+        setSyncMessage(result.error);
+      }
+    });
+  }, [events, pendingAnonymousEvents, user?.id, applyCloudWins, t]);
+
+  const handleMergeCancel = useCallback(() => {
+    setMergeDialogOpen(false);
+    setPendingAnonymousEvents([]);
+
+    if (!user?.id) return;
+    // Even if the user declines the merge, push the current user state to cloud.
+    setSyncStatus("syncing");
+    pushToCloud(events).then((result) => {
+      if (result.ok) {
+        applyCloudWins(result.cloudWins);
+        if (result.cloudWins.length === 0) {
+          setSyncStatus("success");
+          setSyncMessage(t("syncSuccess"));
+        }
+      } else {
+        setSyncStatus("error");
+        setSyncMessage(result.error);
+      }
+    });
+  }, [events, user?.id, applyCloudWins, t]);
 
   /* ---- inline edit ---- */
   const handleStartEdit = useCallback((ev: MemoEvent) => {
@@ -311,9 +537,14 @@ export default function TodoListPage() {
   }, []);
 
   /* ---- computed ---- */
+  const activeEvents = useMemo(
+    () => events.filter((ev) => !ev.deletedAt),
+    [events]
+  );
+
   const filteredEvents = useMemo(() => {
-    if (dateFilter === "all") return events;
-    return events.filter((ev) => {
+    if (dateFilter === "all") return activeEvents;
+    return activeEvents.filter((ev) => {
       const dk = toDateKey(ev.createdAt);
       switch (dateFilter) {
         case "today":
@@ -332,7 +563,7 @@ export default function TodoListPage() {
           return true;
       }
     });
-  }, [events, dateFilter, customStart, customEnd]);
+  }, [activeEvents, dateFilter, customStart, customEnd]);
 
   const FUTURE_KEY = "__future__";
 
@@ -361,13 +592,13 @@ export default function TodoListPage() {
   }, [filteredEvents]);
 
   const thisWeekEvents = useMemo(
-    () => events.filter((ev) => isThisWeek(toDateKey(ev.createdAt))),
-    [events],
+    () => activeEvents.filter((ev) => isThisWeek(toDateKey(ev.createdAt))),
+    [activeEvents],
   );
 
   const lastWeekEvents = useMemo(
-    () => events.filter((ev) => isLastWeek(toDateKey(ev.createdAt))),
-    [events],
+    () => activeEvents.filter((ev) => isLastWeek(toDateKey(ev.createdAt))),
+    [activeEvents],
   );
 
   const stats = useMemo(() => {
@@ -430,6 +661,28 @@ export default function TodoListPage() {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Sync status */}
+      {syncStatus !== "idle" && (
+        <div
+          className={cn(
+            "mb-4 flex items-center gap-2 rounded-lg border px-4 py-2 text-sm",
+            syncStatus === "syncing" && "border-blue-200 bg-blue-50 text-blue-700",
+            syncStatus === "success" && "border-green-200 bg-green-50 text-green-700",
+            syncStatus === "error" && "border-red-200 bg-red-50 text-red-700"
+          )}
+        >
+          {syncStatus === "syncing" && <CloudUpload className="size-4 animate-pulse" />}
+          {syncStatus === "success" && <CheckCircle2 className="size-4" />}
+          {syncStatus === "error" && <AlertCircle className="size-4" />}
+          <span className="flex-1">{syncMessage}</span>
+          {syncStatus === "error" && (
+            <Button variant="ghost" size="sm" onClick={handleManualSync}>
+              {t("retrySync")}
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Custom date range picker */}
       {dateFilter === "custom" && (
@@ -644,6 +897,29 @@ export default function TodoListPage() {
             <FileText className="size-4" />
             {t("genMonthlyReport")}
           </Button> */}
+
+          <h3 className="pt-2 text-sm font-semibold text-muted-foreground">{t("syncTitle")}</h3>
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2"
+            onClick={handleManualSync}
+            disabled={syncStatus === "syncing" || !user}
+          >
+            {user ? (
+              syncStatus === "syncing" ? (
+                <CloudUpload className="size-4 animate-pulse" />
+              ) : (
+                <Cloud className="size-4" />
+              )
+            ) : (
+              <CloudOff className="size-4" />
+            )}
+            {user
+              ? syncStatus === "syncing"
+                ? t("syncing")
+                : t("syncToCloud")
+              : t("loginToSync")}
+          </Button>
         </div>
       </aside>
 
@@ -653,6 +929,16 @@ export default function TodoListPage() {
         onOpenChange={setWeeklyReportOpen}
         thisWeekEvents={thisWeekEvents}
         lastWeekEvents={lastWeekEvents}
+        t={t}
+      />
+
+      {/* Merge anonymous data dialog */}
+      <MergeAnonymousDialog
+        open={mergeDialogOpen}
+        onOpenChange={setMergeDialogOpen}
+        anonymousCount={pendingAnonymousEvents.length}
+        onConfirm={handleMergeConfirm}
+        onCancel={handleMergeCancel}
         t={t}
       />
     </div>

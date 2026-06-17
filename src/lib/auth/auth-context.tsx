@@ -8,17 +8,25 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import type { User } from "./stub-users";
+import type { User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
 // --- Types ---
 
+/** Safe user type (without password) — used by both client and server */
+export type AppUser = {
+  id: string;
+  username: string;
+  email: string;
+};
+
 type AuthState = {
-  user: User | null;
+  user: AppUser | null;
   isLoading: boolean;
 };
 
 type AuthAction =
-  | { type: "SET_USER"; user: User }
+  | { type: "SET_USER"; user: AppUser }
   | { type: "CLEAR_USER" }
   | { type: "SET_LOADING"; isLoading: boolean };
 
@@ -36,25 +44,16 @@ type AuthContextValue = AuthState & {
 
 // --- Helpers ---
 
-const SESSION_COOKIE = "session";
-
-function parseUserFromCookie(): User | null {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(
-    new RegExp(`(?:^|;\\s*)${SESSION_COOKIE}=([^;]*)`)
-  );
-  if (!match) return null;
-  try {
-    const data = JSON.parse(decodeURIComponent(match[1]));
-    if (data && data.id && data.email) return data as User;
-  } catch {
-    // invalid cookie payload
-  }
-  return null;
-}
-
-function clearSessionCookie() {
-  document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+/** Maps a Supabase auth user to our app-level AppUser type. */
+function mapUser(user: User): AppUser {
+  return {
+    id: user.id,
+    username:
+      (user.user_metadata?.username as string | undefined) ??
+      user.email?.split("@")[0] ??
+      "User",
+    email: user.email ?? "",
+  };
 }
 
 // --- Reducer ---
@@ -82,38 +81,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: true,
   });
 
-  // Restore session from cookie on mount
+  // Restore session and subscribe to auth state changes
   useEffect(() => {
-    const user = parseUserFromCookie();
-    if (user) {
-      dispatch({ type: "SET_USER", user });
-    } else {
-      dispatch({ type: "SET_LOADING", isLoading: false });
-    }
+    const supabase = createClient();
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        dispatch({ type: "SET_USER", user: mapUser(session.user) });
+      } else {
+        dispatch({ type: "SET_LOADING", isLoading: false });
+      }
+    });
+
+    // Subscribe to auth state changes (login, logout, token refresh, etc.)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        dispatch({ type: "SET_USER", user: mapUser(session.user) });
+      } else {
+        dispatch({ type: "CLEAR_USER" });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     dispatch({ type: "SET_LOADING", isLoading: true });
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      const data = await res.json();
-
-      if (res.ok && data.ok && data.user) {
-        dispatch({ type: "SET_USER", user: data.user });
-        return { ok: true };
+      if (error) {
+        dispatch({ type: "SET_LOADING", isLoading: false });
+        return { ok: false, error: error.message };
       }
 
-      dispatch({ type: "SET_LOADING", isLoading: false });
-      return {
-        ok: false,
-        error: data.error ?? "errorInvalidCredentials",
-      };
+      // onAuthStateChange will update the user state
+      return { ok: true };
     } catch {
       dispatch({ type: "SET_LOADING", isLoading: false });
       return { ok: false, error: "Network error. Please try again." };
@@ -125,21 +138,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_LOADING", isLoading: true });
 
       try {
-        const res = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
+        const supabase = createClient();
+        const { error } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: { username: data.username },
+          },
         });
 
-        const result = await res.json();
-
-        if (res.ok && result.ok && result.user) {
-          dispatch({ type: "SET_USER", user: result.user });
-          return { ok: true };
+        if (error) {
+          dispatch({ type: "SET_LOADING", isLoading: false });
+          return { ok: false, error: error.message };
         }
 
-        dispatch({ type: "SET_LOADING", isLoading: false });
-        return { ok: false, error: result.error ?? "Registration failed" };
+        // onAuthStateChange will update the user state if email confirmation
+        // is disabled. If email confirmation is enabled, the user will need
+        // to confirm their email before being logged in.
+        return { ok: true };
       } catch {
         dispatch({ type: "SET_LOADING", isLoading: false });
         return { ok: false, error: "Network error. Please try again." };
@@ -148,9 +164,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const logout = useCallback(() => {
-    clearSessionCookie();
-    dispatch({ type: "CLEAR_USER" });
+  const logout = useCallback(async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    // onAuthStateChange will dispatch CLEAR_USER
   }, []);
 
   return (
