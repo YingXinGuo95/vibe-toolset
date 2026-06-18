@@ -1,18 +1,18 @@
 {
   "Layout": {
     "title": {
-      "default": "VibeApp - 交互式 Vibe Coding 工具集合",
-      "template": "%s | VibeApp"
+      "default": "Amazing-Vibe - 交互式 Vibe Coding 工具集合",
+      "template": "%s | Amazing-Vibe"
     },
-    "description": "VibeApp 提供精选的交互式工具与演示，面向 vibe coding 爱好者，涵盖策略游戏、可视化工具、计算器等多个领域。",
+    "description": "Amazing-Vibe 提供精选的交互式工具与演示，面向 vibe coding 爱好者，涵盖策略游戏、可视化工具、计算器等多个领域。",
     "keywords": ["vibe coding", "交互工具", "演示", "Web 应用", "HTML5"],
     "openGraph": {
-      "title": "VibeApp - 交互式 Vibe Coding 工具集合",
+      "title": "Amazing-Vibe - 交互式 Vibe Coding 工具集合",
       "description": "面向 vibe coding 爱好者的精选交互式工具与演示集合。"
     }
   },
   "Header": {
-    "brand": "VibeApp",
+    "brand": "Amazing-Vibe",
     "navHome": "首页",
     "navDemos": "工具列表",
     "navTodoList": "备忘录"
@@ -21,16 +21,17 @@
     "description": "面向 vibe coding 爱好者的精选交互式工具集合。",
     "headingLinks": "链接",
     "headingAbout": "关于",
-    "aboutText": "VibeApp 是一个开源的交互式工具与演示集合，旨在为 vibe coding 爱好者提供轻量、有趣的 Web 体验。",
+    "aboutText": "Amazing-Vibe 是一个开源的交互式工具与演示集合，旨在为 vibe coding 爱好者提供轻量、有趣的 Web 体验。",
     "disclaimer": "免责声明：本网站上的所有工具仅供学习与娱乐使用。内容仅供参考，不构成专业建议。",
-    "copyright": "© {year} VibeApp. All rights reserved.",
+    "copyright": "© {year} Amazing-Vibe. All rights reserved.",
     "navHome": "首页",
     "navDemos": "工具列表"
   },
   "HomePage": {
     "heroTitle": "交互式 Vibe Coding 工具集合",
     "heroDescription": "轻量级、自包含的 HTML5 交互式工具，将想法转化为有趣的动手体验。",
-    "allDemos": "所有工具"
+    "allDemos": "所有工具",
+    "memoDesc": "记录每日待办事项，支持日期选择、周报生成与云端同步。"
   },
   "Demos": {},
   "TodoList": {

@@ -1,18 +1,18 @@
 {
   "Layout": {
     "title": {
-      "default": "VibeApp - Interactive Vibe Coding Tool Collection",
-      "template": "%s | VibeApp"
+      "default": "Amazing-Vibe - Interactive Vibe Coding Tool Collection",
+      "template": "%s | Amazing-Vibe"
     },
-    "description": "VibeApp provides a curated collection of interactive tools and demos for vibe coding enthusiasts, covering strategy games, visual utilities, calculators and more.",
+    "description": "Amazing-Vibe provides a curated collection of interactive tools and demos for vibe coding enthusiasts, covering strategy games, visual utilities, calculators and more.",
     "keywords": ["vibe coding", "interactive tools", "demos", "web apps", "HTML5"],
     "openGraph": {
-      "title": "VibeApp - Interactive Vibe Coding Tool Collection",
+      "title": "Amazing-Vibe - Interactive Vibe Coding Tool Collection",
       "description": "A curated collection of interactive tools and demos for vibe coding."
     }
   },
   "Header": {
-    "brand": "VibeApp",
+    "brand": "Amazing-Vibe",
     "navHome": "Home",
     "navDemos": "Tools",
     "navTodoList": "Memo"
@@ -21,16 +21,17 @@
     "description": "A curated collection of interactive tools for vibe coding enthusiasts.",
     "headingLinks": "Links",
     "headingAbout": "About",
-    "aboutText": "VibeApp is an open-source collection of interactive tools and demos, designed to provide lightweight, engaging web experiences for vibe coding enthusiasts.",
+    "aboutText": "Amazing-Vibe is an open-source collection of interactive tools and demos, designed to provide lightweight, engaging web experiences for vibe coding enthusiasts.",
     "disclaimer": "Disclaimer: All tools on this website are for educational and entertainment purposes only. Content is for reference and does not constitute professional advice.",
-    "copyright": "© {year} VibeApp. All rights reserved.",
+    "copyright": "© {year} Amazing-Vibe. All rights reserved.",
     "navHome": "Home",
     "navDemos": "Tools"
   },
   "HomePage": {
     "heroTitle": "Interactive Vibe Coding Tool Collection",
     "heroDescription": "Lightweight, self-contained HTML5 interactive tools that turn ideas into engaging hands-on experiences.",
-    "allDemos": "All Tools"
+    "allDemos": "All Tools",
+    "memoDesc": "Track daily todos with date scheduling, weekly reports, and cloud sync."
   },
   "Demos": {},
   "TodoList": {

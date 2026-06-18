@@ -1,16 +1,24 @@
+import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/routing";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 type Props = {
   params: Promise<{ locale: string }>;
 };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale: _locale } = await params;
+
+  return {
+    title: "vibe coding 工具集合",
+    description: "在线、免费、实用的工具箱，通过AI coding实现，快来试一试吧",
+    openGraph: {
+      title: "vibe coding 工具集合",
+      description: "在线、免费、实用的工具箱，通过AI coding实现，快来试一试吧",
+    },
+  };
+}
 
 export default async function HomePage({ params }: Props) {
   const { locale: _locale } = await params;
@@ -68,21 +76,8 @@ export default async function HomePage({ params }: Props) {
                   <p className="text-xs text-white/70">Memo</p>
                 </div>
               </div>
-              <CardHeader className="p-4 pb-2">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base font-semibold leading-tight">
-                    {tTodo("title")}
-                  </CardTitle>
-                  <span className="shrink-0 rounded bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                    Tool
-                  </span>
-                </div>
-                <CardDescription className="text-xs text-muted-foreground">
-                  Memo
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <p className="text-sm text-muted-foreground">{tTodo("placeholder")}</p>
+              <CardContent className="p-4">
+                <p className="text-sm text-muted-foreground">{t("memoDesc")}</p>
               </CardContent>
             </Card>
           </Link>
