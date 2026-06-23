@@ -31,9 +31,31 @@
     "heroTitle": "交互式 Vibe Coding 工具集合",
     "heroDescription": "轻量级、自包含的 HTML5 交互式工具，将想法转化为有趣的动手体验。",
     "allDemos": "所有工具",
-    "memoDesc": "记录每日待办事项，支持日期选择、周报生成与云端同步。"
+    "memoDesc": "记录每日待办事项，支持日期选择、周报生成与云端同步。",
+    "gomokuDesc": "伪装成 Excel 的在线五子棋，创建房间即可邀请好友对战。"
   },
   "Demos": {},
+  "Gomoku": {
+    "title": "Excel 五子棋",
+    "description": "创建对战房间，把链接分享给好友，在电子表格里一决高下。",
+    "createRoom": "创建对战房间",
+    "creating": "创建中...",
+    "loading": "加载中...",
+    "roomFull": "其他玩家已加入游戏，请换个房间再试...",
+    "notFound": "房间不存在",
+    "waitingForOpponent": "等待对手加入...",
+    "yourTurn": "轮到你了",
+    "opponentTurn": "等待对手落子",
+    "youWin": "你赢了！",
+    "youLose": "你输了",
+    "draw": "平局",
+    "copyLink": "复制链接",
+    "timeoutIn": "{seconds}秒后超时判负",
+    "gameOver": "已经结束",
+    "ongoingGameTitle": "你已有进行中的游戏",
+    "ongoingGameDescription": "当前账号正在另一局游戏中，请先完成或退出后再开始新游戏。",
+    "backToOngoingGame": "回到进行中的游戏"
+  },
   "TodoList": {
     "title": "备忘录",
     "breadcrumbHome": "首页",

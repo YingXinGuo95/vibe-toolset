@@ -31,9 +31,31 @@
     "heroTitle": "Interactive Vibe Coding Tool Collection",
     "heroDescription": "Lightweight, self-contained HTML5 interactive tools that turn ideas into engaging hands-on experiences.",
     "allDemos": "All Tools",
-    "memoDesc": "Track daily todos with date scheduling, weekly reports, and cloud sync."
+    "memoDesc": "Track daily todos with date scheduling, weekly reports, and cloud sync.",
+    "gomokuDesc": "An Excel-disguised online Gomoku game. Create a room and invite a friend."
   },
   "Demos": {},
+  "Gomoku": {
+    "title": "Excel Gomoku",
+    "description": "Create a room, share the link, and battle inside a spreadsheet.",
+    "createRoom": "Create Room",
+    "creating": "Creating...",
+    "loading": "Loading...",
+    "roomFull": "Other players have joined this room. Please try another room...",
+    "notFound": "Room not found",
+    "waitingForOpponent": "Waiting for opponent...",
+    "yourTurn": "Your turn",
+    "opponentTurn": "Waiting for opponent",
+    "youWin": "You win!",
+    "youLose": "You lose",
+    "draw": "Draw",
+    "copyLink": "Copy link",
+    "timeoutIn": "Timeout in {seconds}s",
+    "gameOver": "Game Over",
+    "ongoingGameTitle": "You already have an ongoing game",
+    "ongoingGameDescription": "You are currently in another game. Please finish or leave it before starting a new one.",
+    "backToOngoingGame": "Back to ongoing game"
+  },
   "TodoList": {
     "title": "Memo Pad",
     "breadcrumbHome": "Home",
