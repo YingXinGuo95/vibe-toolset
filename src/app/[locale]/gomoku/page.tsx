@@ -441,10 +441,20 @@ export default function GomokuPage() {
                     }`}
                   >
                     {cell === BLACK && (
-                      <span className="h-5 w-5 rounded-full bg-neutral-900 shadow-sm" />
+                      <>
+                        <span className="absolute inset-0 bg-slate-300" />
+                        <span className="relative text-[10px] font-bold text-slate-600">
+                          ·
+                        </span>
+                      </>
                     )}
                     {cell === WHITE && (
-                      <span className="h-5 w-5 rounded-full border border-gray-300 bg-white shadow-sm" />
+                      <>
+                        <span className="absolute inset-0 border border-slate-200 bg-slate-50" />
+                        <span className="relative text-[10px] font-bold text-slate-400">
+                          ∘
+                        </span>
+                      </>
                     )}
                   </button>
                 );
