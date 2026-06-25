@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import logger from "@/lib/logger";
 import {
   BLACK,
   WHITE,
@@ -114,20 +115,26 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         typedGame.version += 1;
       } else if (!typedGame.white_player && typedGame.status !== "finished") {
         player = "white";
+        const nextVersion = typedGame.version + 1;
         await supabase
           .from("gomoku_games")
           .update({
             white_player: playerToken,
             status: "playing",
             last_move_at: new Date().toISOString(),
-            version: typedGame.version + 1,
+            version: nextVersion,
             updated_at: new Date().toISOString(),
           })
           .eq("id", typedGame.id);
         typedGame.white_player = playerToken;
         typedGame.status = "playing";
         typedGame.last_move_at = new Date().toISOString();
-        typedGame.version += 1;
+        typedGame.version = nextVersion;
+
+        logger.info(
+          { shortCode, playerToken, newVersion: nextVersion },
+          "white player joined room",
+        );
       }
     }
 

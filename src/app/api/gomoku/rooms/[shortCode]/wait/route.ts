@@ -46,6 +46,17 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
       const typedGame = game as GomokuGameRow;
 
+      log.info(
+        {
+          shortCode,
+          lastVersion,
+          dbVersion: typedGame.version,
+          status: typedGame.status,
+          elapsed: Date.now() - start,
+        },
+        "wait poll tick",
+      );
+
       const timeout = checkTimeout(typedGame);
       if (timeout.timedOut) {
         await supabase
@@ -78,6 +89,8 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
       await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
     }
+
+    log.info({ shortCode, lastVersion }, "wait timeout, returning empty");
 
     return NextResponse.json({ ok: true, game: null });
   } catch (err) {

@@ -119,21 +119,26 @@ export default function GomokuPage() {
         const nextVersion = data.game?.version ?? lastVersion;
         const changed = !!data.game;
 
+        // eslint-disable-next-line no-console
+        console.log("[longPoll]", { shortCode, lastVersion, changed, nextVersion });
+
         if (changed) {
           setGame(data.game);
         }
 
         // State changed → quick retry to catch next update.
-        // No change / timeout → longer backoff to reduce idle requests.
+        // No change / timeout → shorter backoff to recover quickly.
         const delay = changed
           ? 500 + Math.floor(Math.random() * 1000)
-          : 3000 + Math.floor(Math.random() * 2000);
+          : 1000 + Math.floor(Math.random() * 1000);
 
         timeoutRef.current = setTimeout(() => {
           if (roomParam) longPoll(roomParam, nextVersion);
         }, delay);
-      } catch {
-        const delay = 3000 + Math.floor(Math.random() * 2000);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.log("[longPoll] error", err);
+        const delay = 1000 + Math.floor(Math.random() * 1000);
         timeoutRef.current = setTimeout(() => {
           if (roomParam) longPoll(roomParam, lastVersion);
         }, delay);
