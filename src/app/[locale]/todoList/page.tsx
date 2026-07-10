@@ -12,7 +12,6 @@ import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Collapsible,
   CollapsibleContent,
@@ -199,11 +198,6 @@ export default function TodoListPage() {
   >([]);
   const previousUserRef = useRef<string | null | undefined>(undefined);
   const loadedStorageKeyRef = useRef<string>(getStorageKey(null));
-  /* date selector for new memo — "today" or "custom" */
-  type CreateDateMode = "today" | "custom";
-  const [createDateMode, setCreateDateMode] = useState<CreateDateMode>("today");
-  const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1);
-  const [selectedDay, setSelectedDay] = useState(() => new Date().getDate());
   const [dateFilter, setDateFilter] = useState<DateFilter>("30days");
   const [statusFilter, setStatusFilter] = useState<"todo" | "done">("todo");
   const [customStart, setCustomStart] = useState("");
@@ -343,22 +337,13 @@ export default function TodoListPage() {
   const handleAdd = useCallback(() => {
     const content = inputValue.trim();
     if (!content) return;
-    const updatedTs = Date.now();
-    const createdTs =
-      createDateMode === "custom"
-        ? new Date(new Date().getFullYear(), selectedMonth - 1, selectedDay, new Date().getHours(), new Date().getMinutes(), new Date().getSeconds()).getTime()
-        : updatedTs;
+    const now = Date.now();
     setEvents((prev) => [
-      { id: crypto.randomUUID(), content, status: "todo", createdAt: createdTs, updatedAt: updatedTs },
+      { id: crypto.randomUUID(), content, status: "todo", createdAt: now, updatedAt: now },
       ...prev,
     ]);
     setInputValue("");
-    /* reset date selector to today */
-    setCreateDateMode("today");
-    const today = new Date();
-    setSelectedMonth(today.getMonth() + 1);
-    setSelectedDay(today.getDate());
-  }, [inputValue, createDateMode, selectedMonth, selectedDay]);
+  }, [inputValue]);
 
   const handleInputKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -605,79 +590,18 @@ export default function TodoListPage() {
       </div>
 
       {/* Input area */}
-      <div className="mb-6 space-y-2">
-        {/* Date selector row */}
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <Calendar className="size-3.5" />
-                {createDateMode === "custom" ? t("createCustom") : t("createToday")}
-                <ChevronDown className="size-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setCreateDateMode("today")}>
-                {t("createToday")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  if (!selectedMonth) {
-                    const d = new Date();
-                    setSelectedMonth(d.getMonth() + 1);
-                    setSelectedDay(d.getDate());
-                  }
-                  setCreateDateMode("custom");
-                }}
-              >
-                {t("createCustom")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {/* Custom date picker — inline, right of dropdown */}
-          {createDateMode === "custom" && (
-            <>
-              <select
-                value={selectedMonth}
-                onChange={(e) => {
-                  const m = Number(e.target.value);
-                  setSelectedMonth(m);
-                  const maxDay = new Date(new Date().getFullYear(), m, 0).getDate();
-                  if (selectedDay > maxDay) setSelectedDay(maxDay);
-                }}
-                className="h-7 rounded-md border border-input bg-background px-2 text-sm shadow-xs focus-visible:border-ring"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                  <option key={m} value={m}>{m}{t("month")}</option>
-                ))}
-              </select>
-              <select
-                value={selectedDay}
-                onChange={(e) => setSelectedDay(Number(e.target.value))}
-                className="h-7 rounded-md border border-input bg-background px-2 text-sm shadow-xs focus-visible:border-ring"
-              >
-                {Array.from({ length: new Date(new Date().getFullYear(), selectedMonth, 0).getDate() }, (_, i) => i + 1).map((d) => (
-                  <option key={d} value={d}>{d}{t("day")}</option>
-                ))}
-              </select>
-            </>
-          )}
-        </div>
-        {/* Textarea + add button */}
-        <div className="flex gap-2">
-          <Textarea
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleInputKeyDown}
-            placeholder={t("placeholder")}
-            className="min-h-20 resize-none"
-            rows={2}
-          />
-          <Button onClick={handleAdd} disabled={!inputValue.trim()} className="shrink-0 self-end">
-            <Plus className="size-4" />
-            {t("add")}
-          </Button>
-        </div>
+      <div className="mb-6 flex items-center gap-2">
+        <Input
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleInputKeyDown}
+          placeholder={t("placeholder")}
+          className="h-9 flex-1"
+        />
+        <Button onClick={handleAdd} disabled={!inputValue.trim()} size="sm" className="shrink-0 gap-1.5">
+          <Plus className="size-4" />
+          {t("add")}
+        </Button>
       </div>
 
       {/* Statistics */}
