@@ -111,6 +111,8 @@
     "statusTodo": "Todo",
     "statusDone": "Done",
     "statusAbandoned": "Abandoned",
+    "tabPending": "Todo",
+    "tabDone": "Done",
     "markDone": "Mark as done",
     "markTodo": "Revert to todo",
     "abandon": "Abandon",

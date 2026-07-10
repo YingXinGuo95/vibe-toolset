@@ -9,7 +9,7 @@ export type TodoRow = {
   id: string;
   user_id: string;
   content: string;
-  status: "todo" | "done" | "abandoned";
+  status: "todo" | "done";
   created_at: number;
   completed_at: number | null;
   updated_at: number;

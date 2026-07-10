@@ -34,7 +34,7 @@ type ReportFormat = "text" | "markdown";
 
 interface ReportEvent {
   content: string;
-  status: "todo" | "done" | "abandoned";
+  status: "todo" | "done";
   createdAt: number;
 }
 
@@ -87,7 +87,6 @@ function buildWeeklyReportPrompt(
   const statusLabel: Record<string, string> = {
     done: "已完成",
     todo: "待完成",
-    abandoned: "已废弃",
   };
 
   const eventLines = events

@@ -84,7 +84,6 @@ export function WeeklyReportDialog({
   >({
     todo: true,
     done: true,
-    abandoned: false,
   });
 
   /* report options */
@@ -292,7 +291,7 @@ export function WeeklyReportDialog({
 
         {/* Status filter checkboxes */}
         <div className="flex items-center gap-4 text-sm">
-          {(["todo", "done", "abandoned"] as MemoStatus[]).map((s) => (
+          {(["todo", "done"] as MemoStatus[]).map((s) => (
             <label
               key={s}
               className="flex items-center gap-1.5 cursor-pointer select-none"
@@ -307,16 +306,13 @@ export function WeeklyReportDialog({
                 className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                   s === "todo"
                     ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                    : s === "done"
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                    : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                 }`}
               >
                 {t(
                   `status${s.charAt(0).toUpperCase() + s.slice(1)}` as
                     | "statusTodo"
-                    | "statusDone"
-                    | "statusAbandoned",
+                    | "statusDone",
                 )}
               </span>
             </label>
@@ -344,15 +340,7 @@ export function WeeklyReportDialog({
                     className="mt-0.5 size-3.5 shrink-0 rounded border-input accent-primary cursor-pointer"
                   />
                   <div className="min-w-0 flex-1">
-                    <p
-                      className={`text-sm leading-snug ${
-                        ev.status === "done"
-                          ? "line-through text-muted-foreground"
-                          : ev.status === "abandoned"
-                            ? "line-through text-muted-foreground/60"
-                            : ""
-                      }`}
-                    >
+                    <p className="text-sm leading-snug">
                       {ev.content}
                     </p>
                     <span className="text-xs text-muted-foreground">
@@ -363,16 +351,13 @@ export function WeeklyReportDialog({
                     className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                       ev.status === "todo"
                         ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                        : ev.status === "done"
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                     }`}
                   >
                     {t(
                       `status${ev.status.charAt(0).toUpperCase() + ev.status.slice(1)}` as
                         | "statusTodo"
-                        | "statusDone"
-                        | "statusAbandoned",
+                        | "statusDone",
                     )}
                   </span>
                 </div>

@@ -205,7 +205,8 @@ export default function TodoListPage() {
   const [createDateMode, setCreateDateMode] = useState<CreateDateMode>("today");
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().getMonth() + 1);
   const [selectedDay, setSelectedDay] = useState(() => new Date().getDate());
-  const [dateFilter, setDateFilter] = useState<DateFilter>("week");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("30days");
+  const [statusFilter, setStatusFilter] = useState<"todo" | "done">("todo");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [pendingStart, setPendingStart] = useState("");
@@ -384,18 +385,6 @@ export default function TodoListPage() {
     );
   }, []);
 
-  const handleAbandon = useCallback((id: string) => {
-    setEvents((prev) =>
-      prev.map((ev) => (ev.id === id ? { ...ev, status: "abandoned" as MemoStatus, updatedAt: Date.now() } : ev)),
-    );
-  }, []);
-
-  const handleRestore = useCallback((id: string) => {
-    setEvents((prev) =>
-      prev.map((ev) => (ev.id === id ? { ...ev, status: "todo" as MemoStatus, updatedAt: Date.now() } : ev)),
-    );
-  }, []);
-
   const handleDelete = useCallback((ev: MemoEvent) => {
     const deletedAt = Date.now();
     setEvents((prev) =>
@@ -567,10 +556,20 @@ export default function TodoListPage() {
 
   const FUTURE_KEY = "__future__";
 
+  /* flat list (todo tab) — sorted by createdAt desc, no date filter */
+  const todoItems = useMemo(
+    () =>
+      activeEvents
+        .filter((ev) => ev.status === "todo")
+        .sort((a, b) => b.createdAt - a.createdAt),
+    [activeEvents],
+  );
+
   const dayGroups = useMemo(() => {
     const groups: Record<string, MemoEvent[]> = {};
     const todayStr = toDateKey(Date.now());
-    for (const ev of filteredEvents) {
+    const statusEvents = filteredEvents.filter((ev) => ev.status === "done");
+    for (const ev of statusEvents) {
       const dk = toDateKey(ev.createdAt);
       // Merge future dates into a single virtual group
       const key = dk > todayStr ? FUTURE_KEY : dk;
@@ -626,40 +625,9 @@ export default function TodoListPage() {
         <span className="text-foreground">{t("title")}</span>
       </div>
 
-      {/* Title + filter */}
-      <div className="mb-6 flex items-center justify-between gap-4">
+      {/* Title */}
+      <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <Calendar className="size-3.5" />
-                {dateFilter === "custom" && customStart && customEnd
-                  ? t("filter.customRange", { start: customStart, end: customEnd })
-                  : t(`filter.${dateFilter}`)}
-                <ChevronDown className="size-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {(["all", "today", "week", "7days", "30days", "month", "custom"] as DateFilter[]).map((f) => (
-                <DropdownMenuItem
-                  key={f}
-                  onClick={() => {
-                    if (f !== "custom") {
-                      setDateFilter(f);
-                    } else {
-                      setPendingStart(customStart || toInputDate(Date.now() - 6 * 86400000));
-                      setPendingEnd(customEnd || toInputDate(Date.now()));
-                      setDateFilter("custom");
-                    }
-                  }}
-                >
-                  {t(`filter.${f}`)}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
       </div>
 
       {/* Sync status */}
@@ -681,44 +649,6 @@ export default function TodoListPage() {
               {t("retrySync")}
             </Button>
           )}
-        </div>
-      )}
-
-      {/* Custom date range picker */}
-      {dateFilter === "custom" && (
-        <div className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border bg-muted/30 px-4 py-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-muted-foreground">
-              {t("filter.startDate")}
-            </label>
-            <Input
-              type="date"
-              value={pendingStart}
-              onChange={(e) => setPendingStart(e.target.value)}
-              className="h-8 w-40 text-sm"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-muted-foreground">
-              {t("filter.endDate")}
-            </label>
-            <Input
-              type="date"
-              value={pendingEnd}
-              onChange={(e) => setPendingEnd(e.target.value)}
-              className="h-8 w-40 text-sm"
-            />
-          </div>
-          <Button
-            size="sm"
-            disabled={!pendingStart || !pendingEnd}
-            onClick={() => {
-              setCustomStart(pendingStart);
-              setCustomEnd(pendingEnd);
-            }}
-          >
-            {t("filter.apply")}
-          </Button>
         </div>
       )}
 
@@ -818,70 +748,196 @@ export default function TodoListPage() {
         </div>
       )}
 
-      {/* Day groups */}
-      {dayGroups.length === 0 ? (
-        <div className="py-16 text-center">
-          <Calendar className="mx-auto mb-3 size-12 text-muted-foreground/40" />
-          <p className="text-muted-foreground">{t("empty")}</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {dayGroups.map(({ date, items }) => {
-            const isFuture = date === FUTURE_KEY;
-            const isToday = !isFuture && date === todayKey;
-            const isOpen = openGroups[date] === true || (openGroups[date] === undefined && isToday);
+      {/* Status tabs: 待完成 / 已完成 */}
+      <div className="mb-6 flex gap-1 rounded-lg bg-muted p-1">
+        <button
+          onClick={() => setStatusFilter("todo")}
+          className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            statusFilter === "todo"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {t("tabPending")}
+        </button>
+        <button
+          onClick={() => setStatusFilter("done")}
+          className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            statusFilter === "done"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {t("tabDone")}
+        </button>
+      </div>
 
-            return (
-              <Collapsible
-                key={date}
-                open={isOpen}
-                onOpenChange={() => toggleGroup(date)}
-              >
-                <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg px-1 py-2 text-sm font-medium transition-colors hover:bg-muted/50 [&[data-panel-open]>svg]:rotate-0">
-                  <ChevronDown
-                    className={`size-4 shrink-0 transition-transform ${isOpen ? "" : "-rotate-90"}`}
+      {/* Todo tab — flat list */}
+      {statusFilter === "todo" && (
+        <>
+          {todoItems.length === 0 ? (
+            <div className="py-16 text-center">
+              <Calendar className="mx-auto mb-3 size-12 text-muted-foreground/40" />
+              <p className="text-muted-foreground">{t("empty")}</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {todoItems.map((ev) => (
+                <MemoEventCard
+                  key={ev.id}
+                  event={ev}
+                  isEditing={editingId === ev.id}
+                  editValue={editValue}
+                  onToggleDone={handleToggleDone}
+                  onDelete={handleDelete}
+                  onStartEdit={handleStartEdit}
+                  onSaveEdit={handleSaveEdit}
+                  onEditKeyDown={handleEditKeyDown}
+                  onEditChange={handleEditChange}
+                  t={t}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Done tab — date filter + groups */}
+      {statusFilter === "done" && (
+        <>
+          {/* Date filter */}
+          <div className="mb-4 flex items-center gap-2 flex-wrap">
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <Calendar className="size-3.5" />
+                  {dateFilter === "custom" && customStart && customEnd
+                    ? t("filter.customRange", { start: customStart, end: customEnd })
+                    : t(`filter.${dateFilter}`)}
+                  <ChevronDown className="size-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {(["all", "today", "week", "7days", "30days", "month", "custom"] as DateFilter[]).map((f) => (
+                  <DropdownMenuItem
+                    key={f}
+                    onClick={() => {
+                      if (f !== "custom") {
+                        setDateFilter(f);
+                      } else {
+                        setPendingStart(customStart || toInputDate(Date.now() - 6 * 86400000));
+                        setPendingEnd(customEnd || toInputDate(Date.now()));
+                        setDateFilter("custom");
+                      }
+                    }}
+                  >
+                    {t(`filter.${f}`)}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {/* Custom date range picker */}
+            {dateFilter === "custom" && (
+              <div className="flex items-end gap-2 rounded-lg border bg-muted/30 px-3 py-2">
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    {t("filter.startDate")}
+                  </label>
+                  <Input
+                    type="date"
+                    value={pendingStart}
+                    onChange={(e) => setPendingStart(e.target.value)}
+                    className="h-7 w-36 text-sm"
                   />
-                  <span>{isFuture ? t("futureGroup") : fmtDateLabel(date, locale)}</span>
-                  {isFuture && (
-                    <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-600">
-                      <Forward className="size-3" />
-                    </span>
-                  )}
-                  {isToday && (
-                    <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
-                      {t("today")}
-                    </span>
-                  )}
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    {items.length}
-                  </span>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="space-y-2 pb-2">
-                    {items.map((ev) => (
-                      <MemoEventCard
-                        key={ev.id}
-                        event={ev}
-                        isEditing={editingId === ev.id}
-                        editValue={editValue}
-                        showFullDate={isFuture}
-                        onToggleDone={handleToggleDone}
-                        onAbandon={handleAbandon}
-                        onRestore={handleRestore}
-                        onDelete={handleDelete}
-                        onStartEdit={handleStartEdit}
-                        onSaveEdit={handleSaveEdit}
-                        onEditKeyDown={handleEditKeyDown}
-                        onEditChange={handleEditChange}
-                        t={t}
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    {t("filter.endDate")}
+                  </label>
+                  <Input
+                    type="date"
+                    value={pendingEnd}
+                    onChange={(e) => setPendingEnd(e.target.value)}
+                    className="h-7 w-36 text-sm"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  disabled={!pendingStart || !pendingEnd}
+                  onClick={() => {
+                    setCustomStart(pendingStart);
+                    setCustomEnd(pendingEnd);
+                  }}
+                >
+                  {t("filter.apply")}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Day groups */}
+          {dayGroups.length === 0 ? (
+            <div className="py-16 text-center">
+              <Calendar className="mx-auto mb-3 size-12 text-muted-foreground/40" />
+              <p className="text-muted-foreground">{t("empty")}</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {dayGroups.map(({ date, items }) => {
+                const isFuture = date === FUTURE_KEY;
+                const isToday = !isFuture && date === todayKey;
+                const isOpen = openGroups[date] === true || (openGroups[date] === undefined && isToday);
+
+                return (
+                  <Collapsible
+                    key={date}
+                    open={isOpen}
+                    onOpenChange={() => toggleGroup(date)}
+                  >
+                    <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg px-1 py-2 text-sm font-medium transition-colors hover:bg-muted/50 [&[data-panel-open]>svg]:rotate-0">
+                      <ChevronDown
+                        className={`size-4 shrink-0 transition-transform ${isOpen ? "" : "-rotate-90"}`}
                       />
-                    ))}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            );
-          })}
-        </div>
+                      <span>{isFuture ? t("futureGroup") : fmtDateLabel(date, locale)}</span>
+                      {isFuture && (
+                        <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-600">
+                          <Forward className="size-3" />
+                        </span>
+                      )}
+                      {isToday && (
+                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                          {t("today")}
+                        </span>
+                      )}
+                      <span className="ml-auto text-xs text-muted-foreground">
+                        {items.length}
+                      </span>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="space-y-2 pb-2">
+                        {items.map((ev) => (
+                          <MemoEventCard
+                            key={ev.id}
+                            event={ev}
+                            isEditing={editingId === ev.id}
+                            editValue={editValue}
+                            onToggleDone={handleToggleDone}
+                            onDelete={handleDelete}
+                            onStartEdit={handleStartEdit}
+                            onSaveEdit={handleSaveEdit}
+                            onEditKeyDown={handleEditKeyDown}
+                            onEditChange={handleEditChange}
+                            t={t}
+                          />
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
       </div>
 

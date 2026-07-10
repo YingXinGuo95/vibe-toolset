@@ -111,6 +111,8 @@
     "statusTodo": "待完成",
     "statusDone": "已完成",
     "statusAbandoned": "已废弃",
+    "tabPending": "待完成",
+    "tabDone": "已完成",
     "markDone": "标记完成",
     "markTodo": "恢复待完成",
     "abandon": "废弃",
