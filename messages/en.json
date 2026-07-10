@@ -123,6 +123,7 @@
     "statsTotal": "Total: {count}",
     "statsDone": "Done: {count}",
     "statsRate": "Completion: {rate}%",
+    "searchPlaceholder": "Search completed items...",
     "filter": {
       "all": "All",
       "today": "Today",

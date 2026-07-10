@@ -13,11 +13,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -32,12 +27,13 @@ import {
   ChevronDown,
   Calendar,
   FileText,
-  Forward,
   Cloud,
   CloudOff,
   CloudUpload,
   CheckCircle2,
   AlertCircle,
+  Search,
+  X,
 } from "lucide-react";
 import {
   MemoEventCard,
@@ -208,6 +204,9 @@ export default function TodoListPage() {
   const [editValue, setEditValue] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [weeklyReportOpen, setWeeklyReportOpen] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [customPickerOpen, setCustomPickerOpen] = useState(false);
+  const filterRowRef = useRef<HTMLDivElement>(null);
 
   const applyCloudWins = useCallback((cloudWins: MemoEvent[]) => {
     if (cloudWins.length === 0) return;
@@ -325,13 +324,6 @@ export default function TodoListPage() {
 
     return () => clearTimeout(timer);
   }, [events, hydrated, user?.id, applyCloudWins, t]);
-
-  /* ---- auto-expand today ---- */
-  useEffect(() => {
-    if (!hydrated) return;
-    const todayKey = toDateKey(Date.now());
-    setOpenGroups((prev) => (prev[todayKey] === undefined ? { ...prev, [todayKey]: true } : prev));
-  }, [hydrated]);
 
   /* ---- actions ---- */
   const handleAdd = useCallback(() => {
@@ -487,6 +479,18 @@ export default function TodoListPage() {
     setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
+  /* ---- click-outside for custom date popover ---- */
+  useEffect(() => {
+    if (!customPickerOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (filterRowRef.current && !filterRowRef.current.contains(e.target as Node)) {
+        setCustomPickerOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [customPickerOpen]);
+
   /* ---- computed ---- */
   const activeEvents = useMemo(() => events, [events]);
 
@@ -527,7 +531,13 @@ export default function TodoListPage() {
   const dayGroups = useMemo(() => {
     const groups: Record<string, MemoEvent[]> = {};
     const todayStr = toDateKey(Date.now());
-    const statusEvents = filteredEvents.filter((ev) => ev.status === "done");
+    const statusEvents = filteredEvents
+      .filter((ev) => ev.status === "done")
+      .filter((ev) => {
+        if (!searchKeyword.trim()) return true;
+        const kw = searchKeyword.trim().toLowerCase();
+        return ev.content.toLowerCase().includes(kw);
+      });
     for (const ev of statusEvents) {
       const dk = toDateKey(ev.createdAt);
       // Merge future dates into a single virtual group
@@ -547,7 +557,7 @@ export default function TodoListPage() {
         return b.localeCompare(a);
       })
       .map(([date, items]) => ({ date, items }));
-  }, [filteredEvents]);
+  }, [filteredEvents, searchKeyword]);
 
   const thisWeekEvents = useMemo(
     () => activeEvents.filter((ev) => isThisWeek(toDateKey(ev.createdAt))),
@@ -598,7 +608,7 @@ export default function TodoListPage() {
           placeholder={t("placeholder")}
           className="h-9 flex-1"
         />
-        <Button onClick={handleAdd} disabled={!inputValue.trim()} size="sm" className="shrink-0 gap-1.5">
+        <Button onClick={handleAdd} disabled={!inputValue.trim()} size="sm" className="shrink-0 gap-1.5 rounded-full">
           <Plus className="size-4" />
           {t("add")}
         </Button>
@@ -671,7 +681,7 @@ export default function TodoListPage() {
       {statusFilter === "done" && (
         <>
           {/* Date filter */}
-          <div className="mb-4 flex items-center gap-2 flex-wrap">
+          <div ref={filterRowRef} className="relative mb-4 flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger>
                 <Button variant="outline" size="sm" className="gap-1.5">
@@ -689,10 +699,11 @@ export default function TodoListPage() {
                     onClick={() => {
                       if (f !== "custom") {
                         setDateFilter(f);
+                        setCustomPickerOpen(false);
                       } else {
                         setPendingStart(customStart || toInputDate(Date.now() - 6 * 86400000));
                         setPendingEnd(customEnd || toInputDate(Date.now()));
-                        setDateFilter("custom");
+                        setCustomPickerOpen(true);
                       }
                     }}
                   >
@@ -701,9 +712,10 @@ export default function TodoListPage() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            {/* Custom date range picker */}
-            {dateFilter === "custom" && (
-              <div className="flex items-end gap-2 rounded-lg border bg-muted/30 px-3 py-2">
+
+            {/* Custom date range popover */}
+            {customPickerOpen && (
+              <div className="absolute left-0 top-full z-50 mt-1 flex items-end gap-2 rounded-lg border bg-background px-3 py-2 shadow-lg">
                 <div className="flex flex-col gap-0.5">
                   <label className="text-xs font-medium text-muted-foreground">
                     {t("filter.startDate")}
@@ -732,54 +744,71 @@ export default function TodoListPage() {
                   onClick={() => {
                     setCustomStart(pendingStart);
                     setCustomEnd(pendingEnd);
+                    setDateFilter("custom");
+                    setCustomPickerOpen(false);
                   }}
                 >
                   {t("filter.apply")}
                 </Button>
               </div>
             )}
+
+            {/* Search box */}
+            <div className="relative ml-auto w-48">
+              <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder={t("searchPlaceholder")}
+                className="h-8 pl-8 pr-7 text-sm"
+              />
+              {searchKeyword && (
+                <button
+                  onClick={() => setSearchKeyword("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Day groups */}
+          {/* Timeline */}
           {dayGroups.length === 0 ? (
             <div className="py-16 text-center">
               <Calendar className="mx-auto mb-3 size-12 text-muted-foreground/40" />
               <p className="text-muted-foreground">{t("empty")}</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="relative ml-2 border-l-2 border-muted pl-6">
               {dayGroups.map(({ date, items }) => {
                 const isFuture = date === FUTURE_KEY;
                 const isToday = !isFuture && date === todayKey;
-                const isOpen = openGroups[date] === true || (openGroups[date] === undefined && isToday);
+                const isOpen = openGroups[date] !== false;
 
                 return (
-                  <Collapsible
-                    key={date}
-                    open={isOpen}
-                    onOpenChange={() => toggleGroup(date)}
-                  >
-                    <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg px-1 py-2 text-sm font-medium transition-colors hover:bg-muted/50 [&[data-panel-open]>svg]:rotate-0">
-                      <ChevronDown
-                        className={`size-4 shrink-0 transition-transform ${isOpen ? "" : "-rotate-90"}`}
-                      />
-                      <span>{isFuture ? t("futureGroup") : fmtDateLabel(date, locale)}</span>
-                      {isFuture && (
-                        <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-xs text-amber-600">
-                          <Forward className="size-3" />
-                        </span>
-                      )}
+                  <div key={date} className="mb-6 last:mb-0">
+                    {/* Date marker — clickable */}
+                    <button
+                      onClick={() => toggleGroup(date)}
+                      className="flex items-center gap-2 mb-3 -ml-[calc(1.5rem+11px)] cursor-pointer hover:opacity-70 transition-opacity"
+                    >
+                      <div className={`size-[10px] rounded-full border-2 shrink-0 transition-colors ${isOpen ? "border-primary bg-background" : "border-muted-foreground/40 bg-muted-foreground/40"}`} />
+                      <span className="text-sm font-medium text-foreground">
+                        {isFuture ? t("futureGroup") : fmtDateLabel(date, locale)}
+                      </span>
+                      <ChevronDown className={`size-3.5 text-muted-foreground transition-transform ${isOpen ? "" : "-rotate-90"}`} />
                       {isToday && (
                         <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
                           {t("today")}
                         </span>
                       )}
-                      <span className="ml-auto text-xs text-muted-foreground">
-                        {items.length}
-                      </span>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="space-y-2 pb-2">
+                      <span className="text-xs text-muted-foreground">{items.length}</span>
+                    </button>
+
+                    {/* Items */}
+                    {isOpen && (
+                      <div className="space-y-2">
                         {items.map((ev) => (
                           <MemoEventCard
                             key={ev.id}
@@ -796,8 +825,8 @@ export default function TodoListPage() {
                           />
                         ))}
                       </div>
-                    </CollapsibleContent>
-                  </Collapsible>
+                    )}
+                  </div>
                 );
               })}
             </div>

@@ -123,6 +123,7 @@
     "statsTotal": "共 {count} 条",
     "statsDone": "已完成 {count} 条",
     "statsRate": "完成率 {rate}%",
+    "searchPlaceholder": "搜索已完成项...",
     "filter": {
       "all": "全部",
       "today": "今天",
