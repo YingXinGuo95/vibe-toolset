@@ -202,6 +202,37 @@ export async function pushToCloud(events: MemoEvent[]): Promise<PushResult> {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Delete                                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Physically delete a todo row from Supabase for the current user.
+ */
+export async function deleteTodoFromCloud(id: string): Promise<{ ok: boolean; error?: string }> {
+  const supabase = createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { ok: false, error: authError?.message ?? "Not authenticated" };
+  }
+
+  const { error } = await supabase
+    .from("todos")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+
+  return { ok: true };
+}
+
+/* ------------------------------------------------------------------ */
 /*  One-shot full sync: pull + merge + push                            */
 /* ------------------------------------------------------------------ */
 

@@ -27,10 +27,9 @@ import {
 import { WeeklyReportDialog } from "@/components/todoList/WeeklyReportDialog";
 import { MergeAnonymousDialog } from "@/components/todoList/MergeAnonymousDialog";
 import { useAuth } from "@/lib/auth/auth-context";
-import { mergeEvents, pushToCloud, pullFromCloud } from "@/lib/todo/sync";
+import { mergeEvents, pushToCloud, pullFromCloud, deleteTodoFromCloud } from "@/lib/todo/sync";
 import {
   Plus,
-  Undo2,
   ChevronDown,
   Calendar,
   FileText,
@@ -215,8 +214,6 @@ export default function TodoListPage() {
   const [editValue, setEditValue] = useState("");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [weeklyReportOpen, setWeeklyReportOpen] = useState(false);
-  const [undoItem, setUndoItem] = useState<MemoEvent | null>(null);
-  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const applyCloudWins = useCallback((cloudWins: MemoEvent[]) => {
     if (cloudWins.length === 0) return;
@@ -386,29 +383,9 @@ export default function TodoListPage() {
   }, []);
 
   const handleDelete = useCallback((ev: MemoEvent) => {
-    const deletedAt = Date.now();
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === ev.id
-          ? { ...e, deletedAt, updatedAt: deletedAt }
-          : e
-      )
-    );
-    setUndoItem(ev);
-    if (undoTimer.current) clearTimeout(undoTimer.current);
-    undoTimer.current = setTimeout(() => setUndoItem(null), 5000);
+    setEvents((prev) => prev.filter((e) => e.id !== ev.id));
+    deleteTodoFromCloud(ev.id);
   }, []);
-
-  const handleUndo = useCallback(() => {
-    if (!undoItem) return;
-    setEvents((prev) =>
-      prev.map((e) =>
-        e.id === undoItem.id ? { ...e, deletedAt: undefined } : e
-      )
-    );
-    setUndoItem(null);
-    if (undoTimer.current) clearTimeout(undoTimer.current);
-  }, [undoItem]);
 
   const handleManualSync = useCallback(async () => {
     if (!user?.id) return;
@@ -526,10 +503,7 @@ export default function TodoListPage() {
   }, []);
 
   /* ---- computed ---- */
-  const activeEvents = useMemo(
-    () => events.filter((ev) => !ev.deletedAt),
-    [events]
-  );
+  const activeEvents = useMemo(() => events, [events]);
 
   const filteredEvents = useMemo(() => {
     if (dateFilter === "all") return activeEvents;
@@ -630,28 +604,6 @@ export default function TodoListPage() {
         <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
       </div>
 
-      {/* Sync status */}
-      {syncStatus !== "idle" && (
-        <div
-          className={cn(
-            "mb-4 flex items-center gap-2 rounded-lg border px-4 py-2 text-sm",
-            syncStatus === "syncing" && "border-blue-200 bg-blue-50 text-blue-700",
-            syncStatus === "success" && "border-green-200 bg-green-50 text-green-700",
-            syncStatus === "error" && "border-red-200 bg-red-50 text-red-700"
-          )}
-        >
-          {syncStatus === "syncing" && <CloudUpload className="size-4 animate-pulse" />}
-          {syncStatus === "success" && <CheckCircle2 className="size-4" />}
-          {syncStatus === "error" && <AlertCircle className="size-4" />}
-          <span className="flex-1">{syncMessage}</span>
-          {syncStatus === "error" && (
-            <Button variant="ghost" size="sm" onClick={handleManualSync}>
-              {t("retrySync")}
-            </Button>
-          )}
-        </div>
-      )}
-
       {/* Input area */}
       <div className="mb-6 space-y-2">
         {/* Date selector row */}
@@ -727,17 +679,6 @@ export default function TodoListPage() {
           </Button>
         </div>
       </div>
-
-      {/* Undo toast */}
-      {undoItem && (
-        <div className="mb-4 flex items-center justify-between rounded-lg border bg-muted/50 px-4 py-2 text-sm">
-          <span className="text-muted-foreground">{t("deleted")}</span>
-          <Button variant="outline" size="xs" onClick={handleUndo}>
-            <Undo2 className="size-3" />
-            {t("undo")}
-          </Button>
-        </div>
-      )}
 
       {/* Statistics */}
       {filteredEvents.length > 0 && (
@@ -976,6 +917,27 @@ export default function TodoListPage() {
                 : t("syncToCloud")
               : t("loginToSync")}
           </Button>
+          {/* Sync status indicator */}
+          {syncStatus !== "idle" && (
+            <div
+              className={cn(
+                "flex items-start gap-1.5 rounded-md px-2 py-1.5 text-xs",
+                syncStatus === "syncing" && "text-blue-600",
+                syncStatus === "success" && "text-green-600",
+                syncStatus === "error" && "text-red-600"
+              )}
+            >
+              {syncStatus === "syncing" && <CloudUpload className="size-3 shrink-0 mt-0.5 animate-pulse" />}
+              {syncStatus === "success" && <CheckCircle2 className="size-3 shrink-0 mt-0.5" />}
+              {syncStatus === "error" && <AlertCircle className="size-3 shrink-0 mt-0.5" />}
+              <span className="leading-snug">{syncMessage}</span>
+              {syncStatus === "error" && (
+                <button onClick={handleManualSync} className="ml-auto shrink-0 underline hover:no-underline">
+                  {t("retrySync")}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </aside>
 
