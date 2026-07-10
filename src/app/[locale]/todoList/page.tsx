@@ -582,9 +582,12 @@ export default function TodoListPage() {
   const todayKey = toDateKey(Date.now());
 
   return (
-    <div className="relative mx-auto max-w-7xl px-4 py-8">
-      {/* Main content — visually centered */}
-      <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-7xl px-4 py-8">
+      <div className="flex justify-center gap-4">
+        {/* Left spacer — balances the right sidebar so main content stays centered */}
+        <div className="hidden lg:block w-48 shrink-0" />
+        {/* Main content */}
+        <div className="w-full max-w-2xl">
       {/* Breadcrumb */}
       <div className="mb-6 text-sm text-muted-foreground">
         <Link href="/" className="hover:text-foreground transition-colors">
@@ -835,9 +838,9 @@ export default function TodoListPage() {
       )}
       </div>
 
-      {/* Right sidebar — absolute positioned, stuck to right edge */}
-      <aside className="hidden w-48 lg:block absolute right-4 top-8">
-        <div className="sticky top-8 space-y-3">
+        {/* Right sidebar — reports & sync */}
+        <aside className="hidden lg:block w-48 shrink-0">
+          <div className="sticky top-8 space-y-3">
           <h3 className="text-sm font-semibold text-muted-foreground">{t("reportTitle")}</h3>
           <Button variant="outline" className="w-full justify-start gap-2" onClick={() => setWeeklyReportOpen(true)}>
             <FileText className="size-4" />
@@ -893,6 +896,7 @@ export default function TodoListPage() {
           )}
         </div>
       </aside>
+      </div>{/* closes flex container */}
 
       {/* Weekly Report Dialog */}
       <WeeklyReportDialog
